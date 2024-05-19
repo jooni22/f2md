@@ -1,5 +1,5 @@
 # f2md
-This bash script, named "code_to_markdown.sh", allows you to collect files with specified extensions from a directory and its subdirectories, and generate a well-formatted Markdown file with the contents of those files. It provides a convenient way to gather code snippets or text content scattered across multiple files into a single, organized document.
+This bash script, named "f2md", allows you to collect files with specified extensions from a directory and its subdirectories, and generate a well-formatted Markdown file with the contents of those files. It provides a convenient way to gather code snippets or text content scattered across multiple files into a single, organized document.
 
 Key features of the script:
 
@@ -15,5 +15,5 @@ Key features of the script:
 
 To use the script, follow these steps:
 
-1. Make the script executable by running the command: `chmod +x code_to_markdown.sh`
+1. Make the script executable by running the command: `chmod +x f2md`
 2. Run the script with the desired options. For example:
