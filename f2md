@@ -1,0 +1,106 @@
+#!/bin/bash
+
+# Output file name
+output_file="collected_files.md"
+
+# Function to process each file
+process_file() {
+    local file="$1"
+    local ext="${file##*.}"
+    
+    # Check if the file is in an excluded directory
+    for dir in "${exclude_dirs_array[@]}"; do
+        if [[ "$file" == ./"$dir"/* ]]; then
+            return
+        fi
+    done
+    
+    echo "##### $file" >> "$output_file"
+    echo "=====" >> "$output_file"
+    echo "\`\`\`" >> "$output_file"
+    
+    if [ "$ext" == "pdf" ]; then
+        if command -v pdftotext >/dev/null 2>&1; then
+            pdftotext -nopgbrk -layout "$file" - | sed '/^$/d' >> "$output_file"
+        else
+            echo "pdftotext is not installed. Skipping PDF file: $file"
+            echo "Install poppler-utils package to enable PDF support."
+        fi
+    else
+        cat "$file" >> "$output_file"
+    fi
+    
+    echo "\`\`\`" >> "$output_file"
+    echo "" >> "$output_file"
+}
+
+# Function to display help
+display_help() {
+    echo "Usage: $0 [-h] [-e EXCLUDE_DIRS] [-n EXTENSIONS]"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help         Display this help message"
+    echo "  -e EXCLUDE_DIRS    Comma-separated list of directories to exclude"
+    echo "  -n EXTENSIONS      Comma-separated list of file extensions to process"
+    echo ""
+    echo "Example:"
+    echo "  $0 -e target,docs -n pdf,md,txt,rs,toml"
+    exit 0
+}
+
+# Parse command-line options
+exclude_dirs=""
+extensions=""
+exclude_dirs_array=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            display_help
+            ;;
+        -e)
+            IFS=',' read -ra exclude_dirs_array <<< "$2"
+            shift 2
+            ;;
+        -n)
+            extensions="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            display_help
+            ;;
+    esac
+done
+
+# Remove the output file if it already exists
+rm -f "$output_file"
+
+# Check if any extensions are provided
+if [ -z "$extensions" ]; then
+    echo "Please provide at least one file extension using the -n option."
+    echo "For example: $0 -n pdf,md,txt,rs,toml"
+    echo "Extension names found in the current directory and its subdirectories (excluding hidden folders and specified directories):"
+    
+    # Find all unique file extensions recursively, excluding hidden folders
+    find . -not -path '*/\.*' -type f -name '*.*' -exec sh -c 'printf "%s\n" "${0##*.}"' {} \; | sort -u
+    
+    exit 1
+fi
+
+# Recursively find files with the specified extensions in the current directory and its subdirectories, excluding hidden folders
+IFS=',' read -ra ext_array <<< "$extensions"
+for ext in "${ext_array[@]}"; do
+    while IFS= read -r -d '' file; do
+        process_file "$file"
+    done < <(find . -not -path '*/\.*' -type f -name "*.$ext" -print0)
+done
+
+echo "Markdown file '$output_file' created successfully."
+
+echo ""
+echo "List of files included in the Markdown file:"
+echo "----------------------------------------"
+
+# Display the list of files included in the Markdown file
+grep -oP '(?<=##### ).*' "$output_file"
