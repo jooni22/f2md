@@ -1,12 +1,16 @@
 #!/bin/bash
 
-# Output file name
+# Default output file name
 output_file="collected_files.md"
+
+# Default character limit
+char_limit=32000
 
 # Function to process each file
 process_file() {
     local file="$1"
     local ext="${file##*.}"
+    local file_content=""
     
     # Check if the file is in an excluded directory
     for dir in "${exclude_dirs_array[@]}"; do
@@ -15,36 +19,44 @@ process_file() {
         fi
     done
     
-    echo "##### $file" >> "$output_file"
-    echo "=====" >> "$output_file"
-    echo "\`\`\`" >> "$output_file"
+    file_content+="##### $file\n=====\n\`\`\`\n"
     
     if [ "$ext" == "pdf" ]; then
         if command -v pdftotext >/dev/null 2>&1; then
-            pdftotext -nopgbrk -layout "$file" - | sed '/^$/d' >> "$output_file"
+            file_content+=$(pdftotext -nopgbrk -layout "$file" - | sed '/^$/d')
         else
-            echo "pdftotext is not installed. Skipping PDF file: $file"
-            echo "Install poppler-utils package to enable PDF support."
+            file_content+="pdftotext is not installed. Skipping PDF file: $file\nInstall poppler-utils package to enable PDF support."
         fi
     else
-        cat "$file" >> "$output_file"
+        file_content+=$(cat "$file")
     fi
     
-    echo "\`\`\`" >> "$output_file"
-    echo "" >> "$output_file"
+    file_content+="\n\`\`\`\n\n"
+    
+    local current_chars=$(wc -c < "$output_file")
+    local new_chars=$((current_chars + ${#file_content}))
+    
+    if [ $new_chars -gt $char_limit ]; then
+        local file_number=$((${output_file%.*} + 1))
+        output_file="${output_file%.*}_$file_number.md"
+        echo "Character limit exceeded. Creating new file: $output_file"
+    fi
+    
+    echo -e "$file_content" >> "$output_file"
 }
 
 # Function to display help
 display_help() {
-    echo "Usage: $0 [-h] [-e EXCLUDE_DIRS] [-n EXTENSIONS]"
+    echo "Usage: $0 [-h] [-e EXCLUDE_DIRS] [-n EXTENSIONS] [-t CHAR_LIMIT]"
     echo ""
     echo "Options:"
     echo "  -h, --help         Display this help message"
     echo "  -e EXCLUDE_DIRS    Comma-separated list of directories to exclude"
     echo "  -n EXTENSIONS      Comma-separated list of file extensions to process"
+    echo "  -t CHAR_LIMIT      Character limit for each Markdown file (default: 32000)"
     echo ""
     echo "Example:"
-    echo "  $0 -e target,docs -n pdf,md,txt,rs,toml"
+    echo "  $0 -e target,docs -n pdf,md,txt,rs,toml -t 50000"
     exit 0
 }
 
@@ -66,15 +78,16 @@ while [[ $# -gt 0 ]]; do
             extensions="$2"
             shift 2
             ;;
+        -t)
+            char_limit="$2"
+            shift 2
+            ;;
         *)
             echo "Unknown option: $1"
             display_help
             ;;
     esac
 done
-
-# Remove the output file if it already exists
-rm -f "$output_file"
 
 # Check if any extensions are provided
 if [ -z "$extensions" ]; then
@@ -88,6 +101,9 @@ if [ -z "$extensions" ]; then
     exit 1
 fi
 
+# Rremove old output file
+rm -rf ./collected_file*
+
 # Recursively find files with the specified extensions in the current directory and its subdirectories, excluding hidden folders
 IFS=',' read -ra ext_array <<< "$extensions"
 for ext in "${ext_array[@]}"; do
@@ -96,11 +112,11 @@ for ext in "${ext_array[@]}"; do
     done < <(find . -not -path '*/\.*' -type f -name "*.$ext" -print0)
 done
 
-echo "Markdown file '$output_file' created successfully."
+echo "Markdown file(s) created successfully."
 
 echo ""
-echo "List of files included in the Markdown file:"
+echo "List of files included in the Markdown file(s):"
 echo "----------------------------------------"
 
-# Display the list of files included in the Markdown file
-grep -oP '(?<=##### ).*' "$output_file"
+# Display the list of files included in the Markdown file(s)
+grep -oP '(?<=##### ).*' collected_files*.md
