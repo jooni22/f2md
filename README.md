@@ -1,7 +1,3 @@
-
-```math
-\ce{$\unicode[goombafont; color:red; pointer-events: none; z-index: -10; position: fixed; top: 0; left: 0; height: 100vh; object-fit: cover; background-size: cover; width: 130vw; opacity: 0.5; background: url('https://raw.githubusercontent.com/jooni22/f2md/main/wif.jpeg');]{x0000}$}
-
 This powerful bash script, named "f2md", allows you to effortlessly collect files with specified extensions from a directory and its subdirectories, and generate well-formatted Markdown files with the contents of those files. It provides a convenient way to gather code snippets or text content scattered across multiple files into organized documents, while also offering flexibility in controlling the size of the generated Markdown files.
 
 Key features of the script:
@@ -21,4 +17,8 @@ Key features of the script:
 To use the script, follow these steps:
 
 1. Make the script executable by running the command: `chmod +x f2md`
-2. Run the script with the desired options. For example:
+2. Run the script with the desired options. For example
+
+
+```math
+\ce{$\unicode[goombafont; color:red; pointer-events: none; z-index: -10; position: fixed; top: 0; left: 0; height: 100vh; object-fit: cover; background-size: cover; width: 130vw; opacity: 0.5; background: url('https://raw.githubusercontent.com/jooni22/f2md/main/wif.jpeg');]{x0000}$}
